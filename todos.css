@@ -1,0 +1,14 @@
+#demo{
+    font-size: larger;
+    font-style: italic bold;
+    text-align:center;
+    margin-top:30px;
+    font-size:40px;
+}
+#ulTasks li.done{
+    color: rgb(225, 47, 47);
+    text-decoration: line-through;
+}
+.row-no-gap{
+    
+}
