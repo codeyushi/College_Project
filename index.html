@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Azure File Upload and Download</title>
+    <!-- Use the correct Azure SDK -->
+    <script src="https://cdn.jsdelivr.net/npm/@azure/storage-blob@12.1.0/dist/azure-storage.blob.min.js"></script>
+</head>
+<body>
+    <h1>Upload and Download Files</h1>
+
+    <h2>Upload File</h2>
+    <form id="uploadForm" enctype="multipart/form-data">
+        <input type="file" id="fileInput" name="file" required />
+        <button type="submit">Upload</button>
+    </form>
+
+    <h2>Download Files</h2>
+    <ul id="fileList">
+        <!-- Uploaded files will appear here -->
+    </ul>
+
+    <script>
+        const sasUrl = "https://myfileup.blob.core.windows.net/$web?sp=rcwl&st=2024-12-05T02:57:29Z&se=2024-12-05T10:57:29Z&spr=https&sv=2022-11-02&sr=c&sig=MsJPMRYwHEdeDzFvO6iBgv6z8m143Z0UtAMceiacc6U%3D"; // Replace with your SAS URL
+
+        // Initialize Azure Blob Service Client
+        const { BlobServiceClient } = azure.storage.blob;
+        const blobServiceClient = new BlobServiceClient(sasUrl);
+
+        // Function to upload a file
+        async function uploadFile(file) {
+            const containerClient = blobServiceClient.getContainerClient(); // Container client
+            const blockBlobClient = containerClient.getBlockBlobClient(file.name); // Blob client
+
+            try {
+                console.log("Uploading file:", file.name);
+                // Upload the file
+                await blockBlobClient.uploadBrowserData(file);
+                alert(`File "${file.name}" uploaded successfully!`);
+                listFiles(); // Refresh the file list after upload
+            } catch (error) {
+                console.error("Error uploading file:", error);
+                alert("Failed to upload the file.");
+            }
+        }
+
+        // Function to list files in the container
+        async function listFiles() {
+            const containerClient = blobServiceClient.getContainerClient();
+            const fileList = document.getElementById('fileList');
+            fileList.innerHTML = ""; // Clear existing list
+
+            try {
+                // Fetch the list of blobs in the container
+                for await (const blob of containerClient.listBlobsFlat()) {
+                    const fileUrl = `${sasUrl.split("?")[0]}/${blob.name}`;
+                    const li = document.createElement("li");
+                    li.innerHTML = `<a href="${fileUrl}" target="_blank">${blob.name}</a>`;
+                    fileList.appendChild(li);
+                }
+            } catch (error) {
+                console.error("Error listing files:", error);
+                alert("Failed to fetch file list.");
+            }
+        }
+
+        // Event listener for form submission
+        document.getElementById('uploadForm').addEventListener('submit', function (e) {
+            e.preventDefault();
+            const fileInput = document.getElementById('fileInput');
+            const file = fileInput.files[0];
+            if (file) {
+                uploadFile(file);
+            }
+        });
+
+        // List files when the page loads
+        listFiles();
+    </script>
+</body>
+</html>
